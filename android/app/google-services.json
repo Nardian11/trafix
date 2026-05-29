@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "878795926479",
+    "project_id": "trafix-3d86b",
+    "storage_bucket": "trafix-3d86b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878795926479:android:261cbafb56176526b880ba",
+        "android_client_info": {
+          "package_name": "com.trafix.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3Ep4JLTIHevbpmNh1k4BHkvoxQrWFxg4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
