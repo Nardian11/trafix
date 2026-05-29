@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sign_in_screen.dart';
+import '../main.dart'; // Wajib di-import agar bisa memanggil AuthWrapper()
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,10 +20,10 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 3));
 
     if (mounted) {
-      // Mengarahkan langsung ke kelas LoginScreen di berkas terpisah
+      // Mengarahkan ke PENJAGA PINTU (AuthWrapper), bukan langsung ke SignIn
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => SignInScreen()),
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
       );
     }
   }
@@ -31,18 +31,19 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor DIHAPUS agar bisa mengikuti mode gelap/terang dari main.dart
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               'Trafix',
               style: TextStyle(
                 fontSize: 48,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'serif',
-                color: Colors.black,
+                // Warna dinamis mengikuti tema
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 60),
@@ -53,13 +54,16 @@ class _SplashScreenState extends State<SplashScreen> {
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 60),
-            const Text(
+            Text(
               'Real traffic, real time.',
               style: TextStyle(
                 fontSize: 16,
                 fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                // Warna dinamis mengikuti tema dengan sedikit transparansi agar lebih elegan
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withOpacity(0.8),
               ),
             ),
           ],
