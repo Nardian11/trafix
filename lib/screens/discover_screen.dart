@@ -16,28 +16,39 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor DIHAPUS agar otomatis ikut tema
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F4F4),
+        // backgroundColor DIHAPUS
         elevation: 0,
         title: Container(
           height: 42,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.grey[300],
+            // Warna background search bar otomatis menyesuaikan warna Card di tema
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
+            // Tambahan border tipis agar lebih bertekstur
+            border: Border.all(color: Colors.grey.withOpacity(0.2)), 
           ),
           child: TextField(
+            // Warna teks yang diketik dinamis
+            style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
             // TRIGGER PENCARIAN SECARA REAL-TIME SAAT DIKETIK
             onChanged: (value) {
               setState(() {
                 searchQuery = value.toLowerCase();
               });
             },
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Cari nama jalan macet...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5), // Hint dinamis
+              ),
               border: InputBorder.none,
-              icon: Icon(Icons.search, color: Colors.black54),
+              icon: Icon(
+                Icons.search, 
+                color: Theme.of(context).iconTheme.color?.withOpacity(0.6), // Ikon search dinamis
+              ),
             ),
           ),
         ),
@@ -50,13 +61,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1E2F3E)),
+            return Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary), // Loading dinamis
             );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text('Belum ada laporan untuk di-discover.'),
+            return Center(
+              child: Text(
+                'Belum ada laporan untuk di-discover.',
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)), // Teks dinamis
+              ),
             );
           }
 
@@ -117,11 +131,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               fit: BoxFit.cover,
                             )
                           : Container(
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image),
+                              color: Colors.grey.withOpacity(0.2), // Background placeholder dinamis transparan
+                              child: Icon(
+                                Icons.image, 
+                                color: Theme.of(context).iconTheme.color?.withOpacity(0.3) // Ikon dinamis transparan
+                              ),
                             ),
 
                       // 2. Layer Atas: Efek Gradient & Teks Lokasi
+                      // Bagian ini TETAP menggunakan warna statis (Black ke Transparent & text White)
+                      // Karena ini overlay di atas gambar, jadi tetap butuh teks putih agar selalu terbaca.
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -142,7 +161,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             children: [
                               const Icon(
                                 Icons.location_on,
-                                color: Colors.white,
                                 size: 14,
                               ),
                               const SizedBox(width: 4),
@@ -150,7 +168,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                 child: Text(
                                   postData['location'] ?? '',
                                   style: const TextStyle(
-                                    color: Colors.white,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),

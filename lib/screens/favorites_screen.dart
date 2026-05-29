@@ -12,13 +12,17 @@ class FavoritesScreen extends StatelessWidget {
     String? currentUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor DIHAPUS agar otomatis mengikuti Dark/Light Mode
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F4F4),
+        // backgroundColor DIHAPUS
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Jalan Pantauan Saya',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            // color: Colors.black DIHAPUS, ganti jadi dinamis
+            color: Theme.of(context).textTheme.bodyLarge?.color, 
+            fontWeight: FontWeight.bold
+          ),
         ),
         centerTitle: true,
       ),
@@ -29,13 +33,16 @@ class FavoritesScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1E2F3E)),
+            return Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary), // Warna dinamis
             );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text('Belum ada jalan pantauan favorit.'),
+            return Center(
+              child: Text(
+                'Belum ada jalan pantauan favorit.',
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)), // Dinamis
+              ),
             );
           }
 
@@ -86,10 +93,10 @@ class FavoritesScreen extends StatelessWidget {
           }).toList();
 
           if (favoriteFeed.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'Tidak ada laporan macet terbaru di jalan favoritmu.',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)), // Dinamis
               ),
             );
           }
@@ -106,6 +113,7 @@ class FavoritesScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 elevation: 2,
+                // Card Color akan otomatis mengikuti theme.cardColor dari main.dart
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -113,11 +121,10 @@ class FavoritesScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFF1E2F3E),
-                        child: Icon(
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).colorScheme.primary, // Dinamis
+                        child: const Icon(
                           Icons.add_road,
-                          color: Colors.white,
                           size: 20,
                         ),
                       ),
@@ -125,7 +132,10 @@ class FavoritesScreen extends StatelessWidget {
                         postData['location'] ?? 'Nama Jalan',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text("Info: ${postData['caption']}"),
+                      subtitle: Text(
+                        "Info: ${postData['caption']}",
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8)), // Dinamis
+                      ),
                       trailing: Icon(
                         likedVoters.contains(currentUid)
                             ? Icons.favorite

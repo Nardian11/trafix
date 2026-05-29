@@ -180,25 +180,28 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor DIHAPUS agar otomatis ikut tema
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F4F4),
+        // backgroundColor DIHAPUS
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back), // color DIHAPUS, otomatis ikut foregroundColor AppBar
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Confirm Post', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text('Confirm Post', style: TextStyle(fontWeight: FontWeight.bold)), // color DIHAPUS
         centerTitle: true,
       ),
       body: _isUploading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFF1E2F3E)),
-                  SizedBox(height: 16),
-                  Text('Mengunggah laporan...', style: TextStyle(color: Colors.black54)),
+                  CircularProgressIndicator(color: Theme.of(context).colorScheme.primary), // Warna dinamis
+                  const SizedBox(height: 16),
+                  Text(
+                    'Mengunggah laporan...', 
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)), // Warna dinamis
+                  ),
                 ],
               ),
             )
@@ -219,42 +222,55 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
                   const SizedBox(height: 24),
                   TextField(
                     controller: _locationController,
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color), // Teks inputan dinamis
                     decoration: InputDecoration(
                       labelText: 'Lokasi (Nama Jalan)',
-                      prefixIcon: const Icon(Icons.location_on_outlined),
+                      labelStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                      prefixIcon: Icon(Icons.location_on_outlined, color: Theme.of(context).iconTheme.color?.withOpacity(0.7)),
                       suffixIcon: _isFetchingLocation
-                          ? const Padding(
-                              padding: EdgeInsets.all(12.0),
+                          ? Padding(
+                              padding: const EdgeInsets.all(12.0),
                               child: SizedBox(
                                 width: 20, height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E2F3E)),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary), // Loading dinamis
                               ),
                             )
                           : IconButton(
-                              icon: const Icon(Icons.my_location, color: Colors.blue),
+                              icon: Icon(Icons.my_location, color: Theme.of(context).colorScheme.primary), // Icon GPS dinamis
                               onPressed: _getCurrentLocation,
                             ),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _captionController,
                     maxLines: 3,
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color), // Teks inputan dinamis
                     decoration: InputDecoration(
                       labelText: 'Keterangan Macet...',
+                      labelStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: _isFetchingLocation ? null : _uploadPost,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E2F3E),
+                      backgroundColor: Theme.of(context).colorScheme.primary, // Warna background dinamis dari tema
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
                     ),
-                    child: const Text('POST LAPORAN', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text('POST LAPORAN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),

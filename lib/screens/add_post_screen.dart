@@ -43,17 +43,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F4F4),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: const Icon(Icons.close), 
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'New Report',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold), 
         ),
         centerTitle: true,
       ),
@@ -61,21 +59,27 @@ class _AddPostScreenState extends State<AddPostScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.camera_alt_outlined,
               size: 100,
-              color: Colors.black26,
+              color: Theme.of(context).iconTheme.color?.withOpacity(0.3),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _openCamera, // Panggil fungsi kamera
-              icon: const Icon(Icons.camera, color: Colors.white),
+              onPressed: _openCamera, 
+              // HAPUS Colors.white dari Icon agar bisa diatur oleh foregroundColor
+              icon: const Icon(Icons.camera), 
               label: const Text(
                 'Buka Kamera',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E2F3E),
+                backgroundColor: Theme.of(context).colorScheme.primary, // Background dinamis
+                // KUNCI JAWABAN: Set foregroundColor agar Teks & Icon otomatis kontras!
+                foregroundColor: Theme.of(context).colorScheme.onPrimary, 
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
                   vertical: 16,
@@ -83,6 +87,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
+                elevation: 0,
               ),
             ),
           ],

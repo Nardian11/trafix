@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // IMPORT SUDAH DIPERBAIKI (TIDAK TYPO LAGI)
 import 'detail_post_screen.dart';
 import 'notification_screen.dart';
 import 'add_post_screen.dart';
@@ -13,19 +13,22 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor dihapus agar otomatis mengikuti Dark/Light Mode
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F4F4),
+        // backgroundColor dihapus
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.add_circle_outline, color: Colors.black, size: 28),
+          // color: Colors.black dihapus, otomatis mengikuti tema AppBar
+          icon: const Icon(Icons.add_circle_outline, size: 28),
           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddPostScreen())),
         ),
-        title: const Text('Trafix', style: TextStyle(color: Colors.black, fontFamily: 'serif', fontSize: 24, fontWeight: FontWeight.bold)),
+        // color: Colors.black dihapus pada Text
+        title: const Text('Trafix', style: TextStyle(fontFamily: 'serif', fontSize: 24, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black, size: 28),
+            // color: Colors.black dihapus
+            icon: const Icon(Icons.notifications_none, size: 28),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())),
           ),
         ],
@@ -33,8 +36,17 @@ class HomeScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('posts').orderBy('timestamp', descending: true).snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: Color(0xFF1E2F3E)));
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Center(child: Text('Belum ada laporan.'));
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Text(
+                'Belum ada laporan.', 
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)),
+              ),
+            );
+          }
 
           var posts = snapshot.data!.docs;
           return ListView.builder(
@@ -91,19 +103,32 @@ class PostCardWidget extends StatelessWidget {
     bool hasLiked = likedVoters.contains(currentUid);
     bool hasVotedCorrect = correctVoters.contains(currentUid);
     bool hasVotedIncorrect = incorrectVoters.contains(currentUid);
+    
+    // Ambil warna ikon default dari tema (Hitam saat terang, Putih saat gelap)
+    Color defaultIconColor = Theme.of(context).iconTheme.color ?? Colors.grey;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const CircleAvatar(radius: 18, backgroundColor: Colors.grey, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11')),
+            CircleAvatar(
+              radius: 18, 
+              backgroundColor: Colors.grey.withOpacity(0.3), 
+              backgroundImage: const NetworkImage('https://i.pravatar.cc/150?img=11')
+            ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(location, style: const TextStyle(fontSize: 10, color: Colors.black54)),
+                Text(
+                  location, 
+                  style: TextStyle(
+                    fontSize: 10, 
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), // Dinamis
+                  ),
+                ),
               ],
             ),
           ],
@@ -130,77 +155,105 @@ class PostCardWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             child: imageBase64.isNotEmpty
                 ? Image.memory(base64Decode(imageBase64), height: 200, width: double.infinity, fit: BoxFit.cover)
-                : Container(height: 200, color: Colors.grey, child: const Icon(Icons.image_not_supported)),
+                : Container(height: 200, color: Colors.grey.withOpacity(0.2), child: const Icon(Icons.image_not_supported)),
           ),
         ),
         const SizedBox(height: 12),
         
         Row(
           children: [
-            // TOMBOL LIKE INDEPENDEN (MAKSIMALKAN SUBSCRIPTION JALAN)
-            _buildAction(hasLiked ? Icons.favorite : Icons.favorite_border, hasLiked ? Colors.red : Colors.black87, likedVoters.length.toString(), () {
-              if (currentUid == null) return;
-              
-              String rawLocation = location.toLowerCase();
-              List<String> locationWords = rawLocation.split(RegExp(r'[\s,.]+'));
-              String targetedTopic = "umum"; 
-              for (var word in locationWords) {
-                if (word.length > 3 && word != 'jalan' && word != 'gang' && word != 'raya' && word != 'jln') {
-                  targetedTopic = word.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
-                  break;
+            // TOMBOL LIKE INDEPENDEN (SUDAH DITAMBAHKAN ASYNC AWAIT)
+            _buildAction(
+              hasLiked ? Icons.favorite : Icons.favorite_border, 
+              hasLiked ? Colors.red : defaultIconColor, 
+              likedVoters.length.toString(), 
+              () async { // <--- ASYNC DITAMBAHKAN
+                if (currentUid == null) return;
+                
+                String rawLocation = location.toLowerCase();
+                List<String> locationWords = rawLocation.split(RegExp(r'[\s,.]+'));
+                String targetedTopic = "umum"; 
+                for (var word in locationWords) {
+                  if (word.length > 3 && word != 'jalan' && word != 'gang' && word != 'raya' && word != 'jln') {
+                    targetedTopic = word.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+                    break;
+                  }
+                }
+
+                if (hasLiked) {
+                  // <--- AWAIT DITAMBAHKAN
+                  await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+                    'likedVoters': FieldValue.arrayRemove([currentUid])
+                  });
+                  await FirebaseMessaging.instance.unsubscribeFromTopic("jalan_$targetedTopic");
+                } else {
+                  // <--- AWAIT DITAMBAHKAN
+                  await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+                    'likedVoters': FieldValue.arrayUnion([currentUid])
+                  });
+                  await FirebaseMessaging.instance.subscribeToTopic("jalan_$targetedTopic");
                 }
               }
-
-              if (hasLiked) {
-                FirebaseFirestore.instance.collection('posts').doc(postId).update({
-                  'likedVoters': FieldValue.arrayRemove([currentUid])
-                });
-                FirebaseMessaging.instance.unsubscribeFromTopic("jalan_$targetedTopic");
-              } else {
-                FirebaseFirestore.instance.collection('posts').doc(postId).update({
-                  'likedVoters': FieldValue.arrayUnion([currentUid])
-                });
-                FirebaseMessaging.instance.subscribeToTopic("jalan_$targetedTopic");
-              }
-            }),
+            ),
             const SizedBox(width: 16),
             
             // INDIKATOR BALASAN / KOMENTAR NYATA
-            _buildAction(Icons.chat_bubble_outline, Colors.black87, '$commentsCount Balasan', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => DetailPostScreen(postId: postId, name: name, username: username, location: location, caption: caption, imageBase64: imageBase64)));
-            }),
+            _buildAction(
+              Icons.chat_bubble_outline, 
+              defaultIconColor, 
+              '$commentsCount Balasan', 
+              () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => DetailPostScreen(postId: postId, name: name, username: username, location: location, caption: caption, imageBase64: imageBase64)));
+              }
+            ),
             const SizedBox(width: 16),
             
-            // TOMBOL X (MUTUAL EXCLUSIVE TERHADAP CENTANG)
-            _buildAction(hasVotedIncorrect ? Icons.cancel : Icons.cancel_outlined, hasVotedIncorrect ? Colors.red : Colors.redAccent, incorrectVoters.length.toString(), () {
-              if (currentUid == null) return;
-              if (hasVotedIncorrect) {
-                FirebaseFirestore.instance.collection('posts').doc(postId).update({'incorrectVoters': FieldValue.arrayRemove([currentUid])});
-              } else {
-                FirebaseFirestore.instance.collection('posts').doc(postId).update({
-                  'incorrectVoters': FieldValue.arrayUnion([currentUid]),
-                  'correctVoters': FieldValue.arrayRemove([currentUid])
-                });
+            // TOMBOL X (MUTUAL EXCLUSIVE TERHADAP CENTANG, SUDAH DITAMBAHKAN ASYNC AWAIT)
+            _buildAction(
+              hasVotedIncorrect ? Icons.cancel : Icons.cancel_outlined, 
+              hasVotedIncorrect ? Colors.red : defaultIconColor, 
+              incorrectVoters.length.toString(), 
+              () async { // <--- ASYNC DITAMBAHKAN
+                if (currentUid == null) return;
+                if (hasVotedIncorrect) {
+                  await FirebaseFirestore.instance.collection('posts').doc(postId).update({'incorrectVoters': FieldValue.arrayRemove([currentUid])});
+                } else {
+                  await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+                    'incorrectVoters': FieldValue.arrayUnion([currentUid]),
+                    'correctVoters': FieldValue.arrayRemove([currentUid])
+                  });
+                }
               }
-            }),
+            ),
             const SizedBox(width: 16),
             
-            // TOMBOL CENTANG (MUTUAL EXCLUSIVE TERHADAP X)
-            _buildAction(hasVotedCorrect ? Icons.check_circle : Icons.check_circle_outline, hasVotedCorrect ? Colors.green : Colors.black87, correctVoters.length.toString(), () {
-              if (currentUid == null) return;
-              if (hasVotedCorrect) {
-                FirebaseFirestore.instance.collection('posts').doc(postId).update({'correctVoters': FieldValue.arrayRemove([currentUid])});
-              } else {
-                FirebaseFirestore.instance.collection('posts').doc(postId).update({
-                  'correctVoters': FieldValue.arrayUnion([currentUid]),
-                  'incorrectVoters': FieldValue.arrayRemove([currentUid])
-                });
+            // TOMBOL CENTANG (MUTUAL EXCLUSIVE TERHADAP X, SUDAH DITAMBAHKAN ASYNC AWAIT)
+            _buildAction(
+              hasVotedCorrect ? Icons.check_circle : Icons.check_circle_outline, 
+              hasVotedCorrect ? Colors.green : defaultIconColor, 
+              correctVoters.length.toString(), 
+              () async { // <--- ASYNC DITAMBAHKAN
+                if (currentUid == null) return;
+                if (hasVotedCorrect) {
+                  await FirebaseFirestore.instance.collection('posts').doc(postId).update({'correctVoters': FieldValue.arrayRemove([currentUid])});
+                } else {
+                  await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+                    'correctVoters': FieldValue.arrayUnion([currentUid]),
+                    'incorrectVoters': FieldValue.arrayRemove([currentUid])
+                  });
+                }
               }
-            }),
+            ),
           ],
         ),
         const SizedBox(height: 8),
-        Text("$username $caption", style: const TextStyle(fontSize: 13)),
+        Text(
+          "$username $caption", 
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).textTheme.bodyLarge?.color, // Warna teks dinamis
+          ),
+        ),
       ],
     );
   }
@@ -208,7 +261,12 @@ class PostCardWidget extends StatelessWidget {
   Widget _buildAction(IconData icon, Color color, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(children: [Icon(icon, color: color, size: 24), Text(label, style: const TextStyle(fontSize: 10))]),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24), 
+          Text(label, style: TextStyle(fontSize: 10, color: color)) // Warna teks mengikuti warna ikon
+        ],
+      ),
     );
   }
 }

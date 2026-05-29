@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // IJIN MASUK: Untuk Autentikasi
-import 'package:cloud_firestore/cloud_firestore.dart'; // IJIN MASUK: Untuk Simpan Data Profil
-import 'main_dashboard.dart'; // Diarahkan ke Dashboard setelah sukses daftar
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart'; 
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -17,7 +16,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoading = false; // State untuk mendeteksi proses pendaftaran
+  bool _isLoading = false; 
 
   // ========================================================
   // LOGIKA UTAMA: PENDAFTARAN FIREBASE
@@ -27,14 +26,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _emailController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Semua kolom wajib diisi!')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Semua kolom wajib diisi!')));
       return;
     }
 
     setState(() {
-      _isLoading = true; // Aktifkan animasi loading
+      _isLoading = true; 
     });
 
     try {
@@ -45,28 +42,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
             password: _passwordController.text.trim(),
           );
 
-      // Ambil ID unik (UID) pengguna yang baru dibuat
       String uid = userCredential.user!.uid;
 
-      // 2. Simpan data tambahan (Username & HP) ke Cloud Firestore
-      // Menggunakan UID dari Auth sebagai nama Dokumen agar tersinkronisasi
+      // 2. Simpan data tambahan ke Cloud Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'username': _usernameController.text.trim(),
         'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(), // Waktu pendaftaran otomatis
+        'createdAt': FieldValue.serverTimestamp(), 
       });
 
-      // 3. Jika sukses, langsung lempar pengguna masuk ke Main Dashboard
+      // 3. LOGIKA BENAR: Logout paksa agar tidak otomatis masuk, lalu kembali ke Sign In
+      await FirebaseAuth.instance.signOut();
+
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainDashboard()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Akun berhasil dibuat! Silakan Sign In untuk melanjutkan.')),
         );
+        Navigator.pop(context); // Kembali ke halaman Sign In
       }
     } on FirebaseAuthException catch (e) {
-      // Menangkap error khusus dari Firebase (misal: format email salah atau password kurang dari 6 karakter)
       String errorMessage = 'Terjadi kesalahan saat mendaftar.';
       if (e.code == 'weak-password') {
         errorMessage = 'Kata sandi terlalu lemah (minimal 6 karakter).';
@@ -75,19 +71,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       } else if (e.code == 'invalid-email') {
         errorMessage = 'Format email yang kamu masukkan tidak valid.';
       }
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
-      // Menangkap error umum lainnya
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false; // Matikan animasi loading setelah proses selesai
+          _isLoading = false; 
         });
       }
     }
@@ -105,21 +95,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor dihapus agar dinamis
       body: SafeArea(
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF1E2F3E)),
-              ) // Tampilan saat loading
+            ? Center(
+                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+              ) 
             : SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 16.0,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Tombol Back Kotak Biru Navy
+                    // Tombol Back Dinamis
                     Align(
                       alignment: Alignment.topLeft,
                       child: InkWell(
@@ -128,12 +115,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E2F3E),
+                            color: Theme.of(context).colorScheme.primary, // Warna navy di Light, aksen di Dark
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
                             Icons.arrow_back_ios_new,
-                            color: Colors.white,
                             size: 16,
                           ),
                         ),
@@ -142,20 +128,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                     const SizedBox(height: 32),
 
-                    const Text(
+                    Text(
                       'Sign up now',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E2F3E),
+                        color: Theme.of(context).textTheme.bodyLarge?.color, // Teks otomatis hitam/putih
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Please fill the details and create account',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: Colors.black45),
+                      style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)),
                     ),
 
                     const SizedBox(height: 40),
@@ -182,31 +168,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         hintText: '••••••••',
-                        hintStyle: const TextStyle(
-                          color: Colors.black38,
+                        hintStyle: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
                           letterSpacing: 2.0,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF8D8D8D),
-                          ),
+                          borderSide: const BorderSide(color: Color(0xFF8D8D8D)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF8D8D8D),
-                          ),
+                          borderSide: const BorderSide(color: Color(0xFF8D8D8D)),
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: Colors.black38,
+                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
                             size: 20,
                           ),
                           onPressed: () {
@@ -219,20 +198,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
 
                     const SizedBox(height: 8),
-                    const Text(
-                      'Password must be at least 6 characters', // Catatan: Firebase Auth bawaan minimal 6 karakter
-                      style: TextStyle(color: Colors.black45, fontSize: 11),
+                    Text(
+                      'Password must be at least 6 characters', 
+                      style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5), fontSize: 11),
                     ),
 
                     const SizedBox(height: 40),
 
-                    // Tombol Sign Up memanggil fungsi Firebase
+                    // Tombol Sign Up
                     ElevatedButton(
-                      onPressed:
-                          _registerUser, // PANGGIL MESIN REGISTRASI DI SINI
+                      onPressed: _registerUser, 
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF1E2F3E),
+                        backgroundColor: Theme.of(context).colorScheme.primary, // Warna menyesuaikan tema
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
@@ -242,7 +220,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         'Sign Up',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -253,16 +230,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           "Already have an account? ",
-                          style: TextStyle(color: Colors.black54, fontSize: 13),
+                          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7), fontSize: 13),
                         ),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: const Text(
+                          child: Text(
                             'Sign in',
                             style: TextStyle(
-                              color: Color(0xFF1E2F3E),
+                              color: Theme.of(context).colorScheme.primary,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
@@ -287,10 +264,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       controller: controller,
       obscureText: isPassword,
       keyboardType: type,
-      style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black38),
+        hintStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: const BorderSide(color: Color(0xFF8D8D8D)),

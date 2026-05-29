@@ -8,17 +8,17 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor DIHAPUS agar otomatis ikut tema
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F4F4),
+        // backgroundColor DIHAPUS
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back), // color DIHAPUS, otomatis menyesuaikan foregroundColor AppBar
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Semua Notifikasi',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold), // color DIHAPUS
         ),
         centerTitle: true,
       ),
@@ -31,13 +31,19 @@ class NotificationScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF1E2F3E)));
+            return Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary, // Warna loading dinamis
+              ),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'Belum ada aktivitas lalu lintas.',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), // Warna teks kosong dinamis
+                ),
               ),
             );
           }
@@ -54,16 +60,15 @@ class NotificationScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                 elevation: 0, // Desain flat ala iOS/Modern UI
-                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(color: Colors.grey.withOpacity(0.2)),
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFF1E2F3E),
-                    child: Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primary, // Warna bulat ikon dinamis
+                    child: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
                   ),
                   title: Text(
                     "🚨 Macet: ${data['location'] ?? 'Lokasi...'}",
@@ -75,10 +80,16 @@ class NotificationScreen extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4.0),
                     child: Text(
                       "${data['username'] ?? 'Seseorang'} memposting laporan baru",
-                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8), // Warna dinamis elegan
+                      ),
                     ),
                   ),
-                  trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                  trailing: Icon(
+                    Icons.chevron_right, 
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.4), // Panah kanan otomatis berubah warna
+                  ),
                   
                   // Kalau notifikasi diklik, langsung terbang ke Detail Laporan tersebut!
                   onTap: () {

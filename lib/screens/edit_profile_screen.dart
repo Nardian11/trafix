@@ -85,7 +85,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: [
                 CircleAvatar(
                   radius: 60,
-                  backgroundColor: Colors.grey[300],
+                  backgroundColor: Colors.grey.withOpacity(0.3), // Background dinamis transparan
                   backgroundImage: _currentProfileBase64.isNotEmpty
                       ? MemoryImage(base64Decode(_currentProfileBase64)) as ImageProvider
                       : const NetworkImage('https://i.pravatar.cc/150?img=11'),
@@ -94,8 +94,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onTap: _pickImage,
                   child: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(color: Color(0xFF1E2F3E), shape: BoxShape.circle),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary, // Warna tombol dinamis
+                      shape: BoxShape.circle
+                    ),
+                    child: const Icon(Icons.camera_alt, size: 20),
                   ),
                 )
               ],
@@ -103,23 +106,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 30),
             TextField(
               controller: _usernameController,
+              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color), // Warna inputan dinamis
               decoration: InputDecoration(
                 labelText: "Username Baru",
-                prefixIcon: const Icon(Icons.person),
+                labelStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                prefixIcon: Icon(Icons.person, color: Theme.of(context).iconTheme.color?.withOpacity(0.7)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
               ),
             ),
             const SizedBox(height: 40),
             _isLoading
-                ? const CircularProgressIndicator()
+                ? CircularProgressIndicator(color: Theme.of(context).colorScheme.primary) // Warna loading dinamis
                 : ElevatedButton(
                     onPressed: _saveChanges,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E2F3E),
+                      backgroundColor: Theme.of(context).colorScheme.primary, // Warna tombol dinamis
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text("SIMPAN PERUBAHAN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text("SIMPAN PERUBAHAN", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
           ],
         ),

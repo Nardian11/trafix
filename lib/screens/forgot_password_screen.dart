@@ -65,7 +65,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
+      // backgroundColor DIHAPUS agar dinamis mengikuti tema
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -81,26 +81,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E2F3E),
+                      color: Theme.of(context).colorScheme.primary, // Warna dinamis dari tema
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                    child: const Icon(Icons.arrow_back_ios_new, size: 16),
                   ),
                 ),
               ),
               
               const SizedBox(height: 40),
               
-              const Text(
+              Text(
                 'Reset Password',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E2F3E)),
+                style: TextStyle(
+                  fontSize: 26, 
+                  fontWeight: FontWeight.bold, 
+                  color: Theme.of(context).textTheme.bodyLarge?.color, // Warna teks dinamis
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Enter your email address to receive a password reset link',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.black45),
+                style: TextStyle(
+                  fontSize: 13, 
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), // Warna dinamis elegan
+                ),
               ),
               
               const SizedBox(height: 40),
@@ -109,14 +116,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: Colors.black),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color), // Warna inputan dinamis
                 decoration: InputDecoration(
                   hintText: 'Enter your email address',
-                  hintStyle: const TextStyle(color: Colors.black38),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+                  hintStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: const BorderSide(color: Colors.grey),
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(color: Color(0xFF8D8D8D)),
+                    borderSide: const BorderSide(color: Colors.grey),
                   ),
                 ),
               ),
@@ -128,12 +138,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 onPressed: _isLoading ? null : _resetPassword,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: const Color(0xFF1E2F3E),
+                  backgroundColor: Theme.of(context).colorScheme.primary, // Warna dinamis dari tema
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                  elevation: 0,
                 ),
                 child: _isLoading 
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Send Reset Link', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                    : const Text(
+                        'Send Reset Link', 
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
               ),
             ],
           ),

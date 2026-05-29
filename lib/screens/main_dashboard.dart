@@ -37,14 +37,17 @@ class _MainDashboardState extends State<MainDashboard> {
       // SATU-SATUNYA BOTTOM NAVBAR DI APLIKASI
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFFF4F4F4),
+        // Background dinamis mengikuti latar belakang utama aplikasi (Terang/Gelap)
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor, 
         showSelectedLabels: false,
         showUnselectedLabels: false,
         elevation: 0,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: const Color(0xFF1E2F3E), // Biru Navy aktif
-        unselectedItemColor: Colors.black54, // Abu-abu tidak aktif
+        // Warna ikon aktif dinamis (Primary color)
+        selectedItemColor: Theme.of(context).colorScheme.primary, 
+        // Warna ikon pasif dinamis (Otomatis sedikit transparan agar elegan)
+        unselectedItemColor: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4), 
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined, size: 28),
@@ -53,7 +56,7 @@ class _MainDashboardState extends State<MainDashboard> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search, size: 28),
-            activeIcon: Icon(Icons.search, size: 28, weight: 900),
+            activeIcon: Icon(Icons.search, size: 28),
             label: 'Discover',
           ),
           BottomNavigationBarItem(

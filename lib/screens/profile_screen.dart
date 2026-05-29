@@ -15,12 +15,19 @@ class ProfileScreen extends StatelessWidget {
     User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Profil Saya", style: TextStyle(fontWeight: FontWeight.bold)), centerTitle: true),
+      appBar: AppBar(
+        title: const Text("Profil Saya", style: TextStyle(fontWeight: FontWeight.bold)), 
+        centerTitle: true
+      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (!snapshot.hasData || !snapshot.data!.exists) return const Center(child: Text("Data tidak ditemukan"));
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text("Data tidak ditemukan"));
+          }
           
           var userData = snapshot.data!.data() as Map<String, dynamic>;
           String profileBase64 = userData['profilePic'] ?? '';
@@ -29,23 +36,40 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
+                // FOTO PROFIL
                 CircleAvatar(
                   radius: 60,
-                  backgroundColor: Colors.grey[300],
+                  // Background statis diubah menjadi dinamis transparan
+                  backgroundColor: Colors.grey.withOpacity(0.3), 
                   backgroundImage: profileBase64.isNotEmpty 
                     ? MemoryImage(base64Decode(profileBase64)) as ImageProvider
                     : const NetworkImage('https://i.pravatar.cc/150?img=11'),
                 ),
                 const SizedBox(height: 15),
-                Text(userData['username'] ?? 'User', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                Text(user?.email ?? '', style: const TextStyle(color: Colors.grey)),
+                
+                // NAMA & EMAIL
+                Text(
+                  userData['username'] ?? 'User', 
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  user?.email ?? '', 
+                  style: TextStyle(
+                    // Warna statis grey diubah jadi dinamis menyesuaikan tema
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  ),
+                ),
                 const SizedBox(height: 30),
 
                 // TOMBOL PINDAH KE HALAMAN EDIT PROFIL
                 ListTile(
-                  leading: const Icon(Icons.person_outline),
+                  leading: Icon(Icons.person_outline, color: Theme.of(context).iconTheme.color),
                   title: const Text("Edit Profil & Foto"),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios, 
+                    size: 16, 
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.5)
+                  ),
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));
                   },
@@ -56,9 +80,13 @@ class ProfileScreen extends StatelessWidget {
 
                 // TOGGLE DARK MODE
                 SwitchListTile(
-                  secondary: Icon(themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+                  secondary: Icon(
+                    themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
                   title: const Text("Mode Gelap"),
                   value: themeProvider.isDarkMode,
+                  activeColor: Theme.of(context).colorScheme.primary, // Warna tombol switch aktif
                   onChanged: (value) => themeProvider.toggleTheme(),
                   tileColor: Theme.of(context).cardColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -68,12 +96,13 @@ class ProfileScreen extends StatelessWidget {
                 // TOMBOL KELUAR
                 ElevatedButton.icon(
                   onPressed: () => FirebaseAuth.instance.signOut(),
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  label: const Text("Keluar", style: TextStyle(color: Colors.white)),
+                  icon: const Icon(Icons.logout),
+                  label: const Text("Keluar", style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
+                    backgroundColor: Colors.redAccent, // Logout tetap merah karena peringatan bahaya
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
                   ),
                 )
               ],

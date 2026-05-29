@@ -85,21 +85,23 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4), 
+      // backgroundColor dihapus agar dinamis mengikuti Dark/Light mode
       body: SafeArea(
         child: Center(
           child: _isLoading
-            ? const CircularProgressIndicator(color: Color(0xFF1E2F3E)) // Tampilan saat loading
+            ? CircularProgressIndicator(color: Theme.of(context).colorScheme.primary) 
             : SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Card(
-                      color: Colors.white,
+                      // color: Colors.white dihapus agar otomatis mengikuti cardColor dari theme
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20.0),
+                        // Tambahkan border tipis agar Card terlihat elegan di mode gelap
+                        side: BorderSide(color: Colors.grey.withOpacity(0.2)), 
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
@@ -107,32 +109,33 @@ class _SignInScreenState extends State<SignInScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
+                            Text(
                               'Sign In',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                // Warna otomatis menyesuaikan tema
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                               ),
                             ),
                             const SizedBox(height: 32),
 
-                            // Input Email (diubah dari Username)
+                            // Input Email 
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
-                              style: const TextStyle(color: Colors.black),
+                              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
                               decoration: InputDecoration(
                                 hintText: 'Email Address',
-                                hintStyle: const TextStyle(color: Colors.black38),
+                                hintStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: const BorderSide(color: Color(0xFF8D8D8D)),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: const BorderSide(color: Color(0xFF8D8D8D)),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -142,17 +145,17 @@ class _SignInScreenState extends State<SignInScreen> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: true,
-                              style: const TextStyle(color: Colors.black),
+                              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
                               decoration: InputDecoration(
                                 hintText: 'Password',
-                                hintStyle: const TextStyle(color: Colors.black38),
+                                hintStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: const BorderSide(color: Color(0xFF8D8D8D)),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: const BorderSide(color: Color(0xFF8D8D8D)),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -164,20 +167,23 @@ class _SignInScreenState extends State<SignInScreen> {
                                 onPressed: () {
                                   Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
                                 },
-                                child: const Text(
+                                child: Text(
                                   'Forgot password?',
-                                  style: TextStyle(color: Color(0xFF1E2F3E), fontSize: 13),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary, 
+                                    fontSize: 13
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 16),
 
-                            // Tombol Sign In -> Panggil Fungsi Firebase
+                            // Tombol Sign In 
                             ElevatedButton(
-                              onPressed: _loginUser, // PANGGIL MESIN LOGIN DI SINI
+                              onPressed: _loginUser, 
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                backgroundColor: const Color(0xFF1E2F3E),
+                                backgroundColor: Theme.of(context).colorScheme.primary, // Dinamis
                                 shape: const StadiumBorder(),
                                 elevation: 0,
                               ),
@@ -185,7 +191,6 @@ class _SignInScreenState extends State<SignInScreen> {
                                 'Sign In',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -195,9 +200,12 @@ class _SignInScreenState extends State<SignInScreen> {
                             // Teks Registrasi / Sign Up
                             Column(
                               children: [
-                                const Text(
+                                Text(
                                   "don't have an account?",
-                                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7), 
+                                    fontSize: 13
+                                  ),
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -206,11 +214,11 @@ class _SignInScreenState extends State<SignInScreen> {
                                       MaterialPageRoute(builder: (context) => const SignUpScreen()),
                                     );
                                   },
-                                  child: const Text(
+                                  child: Text(
                                     'Sign Up',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Color(0xFF1E2F3E),
+                                      color: Theme.of(context).colorScheme.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
