@@ -18,14 +18,16 @@ class _AddPostScreenState extends State<AddPostScreen> {
   Future<void> _openCamera() async {
     final XFile? photo = await _picker.pickImage(
       source: ImageSource.camera,
-      imageQuality: 80, // Kompres gambar agar tidak terlalu berat saat diupload
+      imageQuality:
+          20, // KUNCI UTAMA: Kompres ekstrem agar aman di Firestore (< 1MB)
+      maxWidth: 600, // KUNCI UTAMA: Batasi resolusi lebar gambar
     );
 
     if (photo != null) {
       setState(() {
         _imageFile = File(photo.path);
       });
-      
+
       // Jika foto berhasil diambil, langsung pindah ke layar Konfirmasi
       if (mounted) {
         Navigator.pushReplacement(
@@ -59,16 +61,28 @@ class _AddPostScreenState extends State<AddPostScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.camera_alt_outlined, size: 100, color: Colors.black26),
+            const Icon(
+              Icons.camera_alt_outlined,
+              size: 100,
+              color: Colors.black26,
+            ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _openCamera, // Panggil fungsi kamera
               icon: const Icon(Icons.camera, color: Colors.white),
-              label: const Text('Buka Kamera', style: TextStyle(color: Colors.white, fontSize: 16)),
+              label: const Text(
+                'Buka Kamera',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E2F3E),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
             ),
           ],

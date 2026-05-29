@@ -1,10 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'detail_post_screen.dart';
 import 'notification_screen.dart';
 import 'add_post_screen.dart';
-import 'comment_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -22,12 +22,10 @@ class HomeScreen extends StatelessWidget {
             color: Colors.black,
             size: 28,
           ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddPostScreen()),
-            );
-          },
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddPostScreen()),
+          ),
         ),
         title: const Text(
           'Trafix',
@@ -46,48 +44,29 @@ class HomeScreen extends StatelessWidget {
               color: Colors.black,
               size: 28,
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationScreen(),
-                ),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationScreen(),
+              ),
+            ),
           ),
         ],
       ),
-      // ========================================================
-      // LOGIKA UTAMA: MENARIK DATA POSTINGAN DARI FIRESTORE
-      // ========================================================
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('posts')
             .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting)
             return const Center(
               child: CircularProgressIndicator(color: Color(0xFF1E2F3E)),
             );
-          }
-
-          if (snapshot.hasError) {
-            return const Center(child: Text('Terjadi kesalahan memuat data.'));
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text(
-                'Belum ada laporan lalu lintas.\nJadilah yang pertama melapor!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54),
-              ),
-            );
-          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+            return const Center(child: Text('Belum ada laporan.'));
 
           var posts = snapshot.data!.docs;
-
           return ListView.builder(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
@@ -96,20 +75,26 @@ class HomeScreen extends StatelessWidget {
             itemCount: posts.length,
             itemBuilder: (context, index) {
               var postData = posts[index].data() as Map<String, dynamic>;
-              var postId = posts[index].id; 
+
+              // Mengambil Array pemilih dari database
+              List<dynamic> likedVoters = postData['likedVoters'] ?? [];
+              List<dynamic> correctVoters = postData['correctVoters'] ?? [];
+              List<dynamic> incorrectVoters = postData['incorrectVoters'] ?? [];
+              int commentsCount = postData['commentsCount'] ?? 0;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 24.0),
                 child: PostCardWidget(
-                  postId: postId,
+                  postId: posts[index].id,
                   name: postData['name'] ?? 'Anonim',
                   username: postData['username'] ?? 'anonim',
-                  location: postData['location'] ?? 'Lokasi tidak diketahui',
+                  location: postData['location'] ?? 'Lokasi...',
                   caption: postData['caption'] ?? '',
-                  imageUrl:
-                      postData['imageUrl'] ??
-                      'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
-                  likesCount: postData['likesCount'] ?? 0,
+                  imageBase64: postData['image'] ?? '',
+                  likedVoters: likedVoters,
+                  correctVoters: correctVoters,
+                  incorrectVoters: incorrectVoters,
+                  commentsCount: commentsCount,
                 ),
               );
             },
@@ -120,17 +105,12 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ========================================================
-// KARTU POSTINGAN
-// ========================================================
-class PostCardWidget extends StatefulWidget {
-  final String postId; 
-  final String name;
-  final String username;
-  final String location;
-  final String caption;
-  final String imageUrl;
-  final int likesCount;
+class PostCardWidget extends StatelessWidget {
+  final String postId, name, username, location, caption, imageBase64;
+  final List<dynamic> likedVoters;
+  final List<dynamic> correctVoters;
+  final List<dynamic> incorrectVoters;
+  final int commentsCount;
 
   const PostCardWidget({
     super.key,
@@ -139,238 +119,208 @@ class PostCardWidget extends StatefulWidget {
     required this.username,
     required this.location,
     required this.caption,
-    required this.imageUrl,
-    required this.likesCount,
+    required this.imageBase64,
+    required this.likedVoters,
+    required this.correctVoters,
+    required this.incorrectVoters,
+    required this.commentsCount,
   });
 
   @override
-  State<PostCardWidget> createState() => _PostCardWidgetState();
-}
-
-class _PostCardWidgetState extends State<PostCardWidget> {
-  bool _isLiked = false;
-  late int _currentLikeCount;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentLikeCount = widget.likesCount; 
-  }
-
-  @override
   Widget build(BuildContext context) {
+    String? currentUid = FirebaseAuth.instance.currentUser?.uid;
+    bool hasLiked = likedVoters.contains(currentUid);
+    bool hasVotedCorrect = correctVoters.contains(currentUid);
+    bool hasVotedIncorrect = incorrectVoters.contains(currentUid);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header Post
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DetailPostScreen(
-                  postId: widget.postId,
-                  name: widget.name,
-                  username: widget.username,
-                  location: widget.location,
-                  caption: widget.caption,
-                  imageUrl: widget.imageUrl,
-                  likesCount: widget.likesCount,
-                ),
-              ),
-            );
-          },
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.grey,
-                backgroundImage: NetworkImage(
-                  'https://i.pravatar.cc/150?img=11',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
+        Row(
+          children: [
+            const CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.grey,
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11'),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
-                  Text(
-                    widget.location,
-                    style: const TextStyle(fontSize: 10, color: Colors.black54),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              const Icon(
-                Icons.remove_circle_outline,
-                color: Colors.black38,
-                size: 20,
-              ),
-            ],
-          ),
+                ),
+                Text(
+                  location,
+                  style: const TextStyle(fontSize: 10, color: Colors.black54),
+                ),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        // Gambar Laporan 
+
+        // PENCET GAMBAR UTK MASUK DETAIL
         GestureDetector(
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => DetailPostScreen(
-                  postId: widget.postId,
-                  name: widget.name,
-                  username: widget.username,
-                  location: widget.location,
-                  caption: widget.caption,
-                  imageUrl: widget.imageUrl,
-                  likesCount: widget.likesCount,
+                  postId: postId,
+                  name: name,
+                  username: username,
+                  location: location,
+                  caption: caption,
+                  imageBase64: imageBase64,
                 ),
               ),
             );
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.network(
-              widget.imageUrl,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            child: imageBase64.isNotEmpty
+                ? Image.memory(
+                    base64Decode(imageBase64),
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    height: 200,
+                    color: Colors.grey,
+                    child: const Icon(Icons.image_not_supported),
+                  ),
           ),
         ),
         const SizedBox(height: 12),
-        // Baris Aksi
+
         Row(
           children: [
-            // LOGIKA TOMBOL LIKE YANG BARU DITAMBAHKAN
-            GestureDetector(
-              onTap: () async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user == null) return;
-
-                setState(() {
-                  _isLiked = !_isLiked;
-                  _isLiked ? _currentLikeCount++ : _currentLikeCount--;
-                });
-
-                // Referensi path database favorites milik user yang sedang login
-                final favRef = FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .collection('favorites')
-                    .doc(widget.postId);
-
-                if (_isLiked) {
-                  // 1. Catat ke database favorites user
-                  await favRef.set({
-                    'postId': widget.postId,
-                    'location': widget.location,
-                    'timestamp': FieldValue.serverTimestamp(),
-                  });
-                  
-                  // 2. Update total likes di dokumen posts utama
-                  FirebaseFirestore.instance.collection('posts').doc(widget.postId).update({
-                    'likesCount': FieldValue.increment(1)
-                  });
-
-                  print('Menembak API ke Vercel untuk lokasi: ${widget.location}');
-                } else {
-                  // Jika di-unlike, hapus dari folder favorites user
-                  await favRef.delete();
-
-                  // Kurangi total likes di dokumen posts utama
-                  FirebaseFirestore.instance.collection('posts').doc(widget.postId).update({
-                    'likesCount': FieldValue.increment(-1)
-                  });
-                }
+            // TOMBOL LIKE (SISTEM ARRAY)
+            _buildAction(
+              hasLiked ? Icons.favorite : Icons.favorite_border,
+              hasLiked ? Colors.red : Colors.black87,
+              likedVoters.length.toString(),
+              () {
+                if (currentUid == null) return;
+                FirebaseFirestore.instance
+                    .collection('posts')
+                    .doc(postId)
+                    .update({
+                      'likedVoters': hasLiked
+                          ? FieldValue.arrayRemove([currentUid])
+                          : FieldValue.arrayUnion([currentUid]),
+                    });
               },
-              child: Column(
-                children: [
-                  Icon(
-                    _isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: _isLiked ? Colors.red : Colors.black87,
-                    size: 24,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$_currentLikeCount',
-                    style: const TextStyle(fontSize: 10, color: Colors.black87),
-                  ),
-                ],
-              ),
             ),
             const SizedBox(width: 16),
 
-            // TOMBOL KOMENTAR
-            GestureDetector(
-              onTap: () {
+            // TOMBOL KOMENTAR (MENAMPILKAN JUMLAH NYATA)
+            _buildAction(
+              Icons.chat_bubble_outline,
+              Colors.black87,
+              '$commentsCount Balasan',
+              () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => CommentScreen(postId: widget.postId),
+                    builder: (context) => DetailPostScreen(
+                      postId: postId,
+                      name: name,
+                      username: username,
+                      location: location,
+                      caption: caption,
+                      imageBase64: imageBase64,
+                    ),
                   ),
                 );
               },
-              child: _buildStaticActionIcon(
-                Icons.chat_bubble_outline,
-                Colors.black87,
-                'Balas',
-              ),
             ),
             const SizedBox(width: 16),
 
-            _buildStaticActionIcon(Icons.cancel_outlined, Colors.black87, '2'),
+            // TOMBOL SILANG (MUTUAL EXCLUSIVE)
+            _buildAction(
+              hasVotedIncorrect ? Icons.cancel : Icons.cancel_outlined,
+              hasVotedIncorrect ? Colors.red : Colors.redAccent,
+              incorrectVoters.length.toString(),
+              () {
+                if (currentUid == null) return;
+                if (hasVotedIncorrect) {
+                  FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(postId)
+                      .update({
+                        'incorrectVoters': FieldValue.arrayRemove([currentUid]),
+                      });
+                } else {
+                  FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(postId)
+                      .update({
+                        'incorrectVoters': FieldValue.arrayUnion([currentUid]),
+                        'correctVoters': FieldValue.arrayRemove([
+                          currentUid,
+                        ]), // Hapus dari centang jika ada
+                      });
+                }
+              },
+            ),
             const SizedBox(width: 16),
-            _buildStaticActionIcon(
-              Icons.check_circle_outline,
-              Colors.black87,
-              '5',
+
+            // TOMBOL CENTANG (MUTUAL EXCLUSIVE)
+            _buildAction(
+              hasVotedCorrect ? Icons.check_circle : Icons.check_circle_outline,
+              hasVotedCorrect ? Colors.green : Colors.black87,
+              correctVoters.length.toString(),
+              () {
+                if (currentUid == null) return;
+                if (hasVotedCorrect) {
+                  FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(postId)
+                      .update({
+                        'correctVoters': FieldValue.arrayRemove([currentUid]),
+                      });
+                } else {
+                  FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(postId)
+                      .update({
+                        'correctVoters': FieldValue.arrayUnion([currentUid]),
+                        'incorrectVoters': FieldValue.arrayRemove([
+                          currentUid,
+                        ]), // Hapus dari silang jika ada
+                      });
+                }
+              },
             ),
           ],
         ),
         const SizedBox(height: 8),
-        // Teks Caption
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 13,
-              height: 1.4,
-            ),
-            children: [
-              TextSpan(
-                text: '${widget.username} ',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextSpan(text: widget.caption),
-              const TextSpan(
-                text: ' more',
-                style: TextStyle(color: Colors.black38),
-              ),
-            ],
-          ),
-        ),
+        Text("$username $caption", style: const TextStyle(fontSize: 13)),
       ],
     );
   }
 
-  Widget _buildStaticActionIcon(IconData icon, Color color, String count) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          count,
-          style: const TextStyle(fontSize: 10, color: Colors.black87),
-        ),
-      ],
+  Widget _buildAction(
+    IconData icon,
+    Color color,
+    String label,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          Text(label, style: const TextStyle(fontSize: 10)),
+        ],
+      ),
     );
   }
 }

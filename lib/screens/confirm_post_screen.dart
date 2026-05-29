@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:convert'; // Untuk mengubah gambar jadi teks Base64
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:geolocator/geolocator.dart'; 
+import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
 import 'main_dashboard.dart';
 
 class ConfirmPostScreen extends StatefulWidget {
@@ -21,29 +22,24 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
   final TextEditingController _locationController = TextEditingController();
 
   bool _isUploading = false;
-  bool _isFetchingLocation = true; // Animasi loading khusus untuk kolom lokasi
+  bool _isFetchingLocation = true;
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation(); // Otomatis lacak lokasi saat layar ini terbuka!
+    _getCurrentLocation();
   }
 
-  // ========================================================
-  // LOGIKA BARU: MELACAK GPS & MENDAPATKAN NAMA JALAN
-  // ========================================================
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
     try {
-      // 1. Cek apakah GPS HP menyala
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw Exception('GPS tidak aktif. Mohon nyalakan GPS kamu.');
       }
 
-      // 2. Cek izin aplikasi
       permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -56,12 +52,10 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
         throw Exception('Izin lokasi ditolak permanen. Buka pengaturan HP.');
       }
 
-      // 3. Kunci koordinat saat ini
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // 4. Terjemahkan koordinat menjadi nama jalan (Reverse Geocoding)
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
@@ -69,7 +63,6 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
-        // Format canggih: Menggabungkan nama jalan dan nama daerah/kecamatan
         String streetName =
             '${place.street ?? place.name}, ${place.subLocality ?? place.locality}';
 
@@ -86,11 +79,10 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       setState(() {
-        _isFetchingLocation = false; 
+        _isFetchingLocation = false;
       });
     }
   }
-
 
   Future<void> _uploadPost() async {
     if (_captionController.text.trim().isEmpty ||
@@ -115,24 +107,47 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
           .get();
       String username = userDoc['username'] ?? 'User';
 
-      String fileName =
-          'posts/${DateTime.now().millisecondsSinceEpoch}_${currentUser.uid}.jpg';
-      Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+      // ==========================================================
+      // LOGIKA BARU: UBAH GAMBAR JADI TEKS (BASE64)
+      // ==========================================================
+      final bytes = await widget.imageFile.readAsBytes();
+      final String base64Image = base64Encode(bytes);
 
-      UploadTask uploadTask = storageRef.putFile(widget.imageFile);
-      TaskSnapshot snapshot = await uploadTask;
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-
+      // Simpan langsung ke Firestore sebagai teks (Sesuai slide materi)
       await FirebaseFirestore.instance.collection('posts').add({
         'uid': currentUser.uid,
         'name': username,
         'username': username,
         'location': _locationController.text.trim(),
         'caption': _captionController.text.trim(),
-        'imageUrl': downloadUrl,
+        'image': base64Image, // Menyimpan format teks Base64
         'likesCount': 0,
         'timestamp': FieldValue.serverTimestamp(),
       });
+
+      // ==========================================================
+      // TEMBAK API VERCEL (NOTIFIKASI)
+      // ==========================================================
+      try {
+        final url = Uri.parse(
+          'https://project-uas-pab2-trafix.vercel.app/send-to-topic',
+        );
+
+        final body = jsonEncode({
+          "topic": "kemacetan",
+          "title": "🚨 Laporan Baru dari $username",
+          "body": "Titik: ${_locationController.text.trim()}",
+          "senderName": username,
+        });
+
+        await http.post(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: body,
+        );
+      } catch (e) {
+        print("Gagal menembak API Vercel: $e");
+      }
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
@@ -142,9 +157,13 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal upload: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal upload: $e. Pastikan ukuran gambar kecil (< 1MB)',
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -207,14 +226,11 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // INPUT LOKASI OTOMATIS
                   TextField(
                     controller: _locationController,
                     decoration: InputDecoration(
                       labelText: 'Lokasi (Nama Jalan)',
                       prefixIcon: const Icon(Icons.location_on_outlined),
-                      // Tampilkan pusingan loading kecil saat GPS sedang melacak
                       suffixIcon: _isFetchingLocation
                           ? const Padding(
                               padding: EdgeInsets.all(12.0),
@@ -232,8 +248,7 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
                                 Icons.my_location,
                                 color: Colors.blue,
                               ),
-                              onPressed:
-                                  _getCurrentLocation, // Tombol untuk refresh lokasi manual
+                              onPressed: _getCurrentLocation,
                             ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -241,7 +256,6 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   TextField(
                     controller: _captionController,
                     maxLines: 3,
@@ -253,11 +267,8 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-
                   ElevatedButton(
-                    onPressed: _isFetchingLocation
-                        ? null
-                        : _uploadPost, // Kunci tombol saat melacak GPS
+                    onPressed: _isFetchingLocation ? null : _uploadPost,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E2F3E),
                       padding: const EdgeInsets.symmetric(vertical: 16),
