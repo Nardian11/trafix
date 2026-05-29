@@ -2,15 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'providers/theme_provider.dart';
 import 'screens/main_dashboard.dart';
-import 'screens/sign_in_screen.dart'; // Sesuaikan nama file Sign In
-import 'screens/splash_screen.dart';  // Sesuaikan nama file Splash Screen
+import 'screens/sign_in_screen.dart';
+import 'screens/splash_screen.dart';
+import '../services/notification_service.dart'; // <--- IMPORT NOTIFICATION SERVICE (Sesuaikan letak foldernya jika perlu)
+
+// ====================================================================
+// 1. TANGKAP NOTIF SAAT APLIKASI DI-MINIMIZE ATAU DITUTUP (BACKGROUND)
+// ====================================================================
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Wajib inisialisasi Firebase jika ingin mengakses database dari background
+  await Firebase.initializeApp();
+  print("Notifikasi masuk dari background: ${message.notification?.title}");
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // ====================================================================
+  // 2. DAFTARKAN BACKGROUND HANDLER
+  // ====================================================================
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // ====================================================================
+  // 3. BANGUNKAN NOTIFICATION SERVICE (PENGGANTI LOGIKA LAMA)
+  // Ini akan mengurus pop-up saat aplikasi terbuka & minta izin notif
+  // ====================================================================
+  await NotificationService().initNotification();
+
+  // ====================================================================
+  // KUNCI JAWABAN TESTING: PAKSA SUBSCRIBE KE SEMUA JALAN
+  // ====================================================================
+  // await FirebaseMessaging.instance.subscribeToTopic("semua_jalan");
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
@@ -30,7 +58,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Trafix',
       themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      
+
       // ==========================================
       // TEMA TERANG (KUNCI DI HITAM & ABU-ABU)
       // ==========================================
@@ -39,9 +67,9 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.light,
         scaffoldBackgroundColor: const Color(0xFFF4F4F4),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF4F4F4), 
-          foregroundColor: Colors.black, 
-          elevation: 0
+          backgroundColor: Color(0xFFF4F4F4),
+          foregroundColor: Colors.black,
+          elevation: 0,
         ),
         cardColor: Colors.white,
         colorScheme: const ColorScheme.light(
@@ -51,7 +79,7 @@ class MyApp extends StatelessWidget {
         ),
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      
+
       // ==========================================
       // TEMA GELAP (KUNCI DI PUTIH & ABU GELAP)
       // ==========================================
@@ -60,9 +88,9 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1F1F1F), 
-          foregroundColor: Colors.white, 
-          elevation: 0
+          backgroundColor: Color(0xFF1F1F1F),
+          foregroundColor: Colors.white,
+          elevation: 0,
         ),
         cardColor: const Color(0xFF1E1E1E),
         colorScheme: const ColorScheme.dark(
@@ -72,8 +100,8 @@ class MyApp extends StatelessWidget {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      
-      home: const SplashScreen(), 
+
+      home: const SplashScreen(),
     );
   }
 }
@@ -93,14 +121,14 @@ class AuthWrapper extends StatelessWidget {
           return const Scaffold(
             body: Center(
               // Loading screen diatur menggunakan warna sesuai mode
-              child: CircularProgressIndicator(), 
+              child: CircularProgressIndicator(),
             ),
           );
         }
         if (snapshot.hasData) {
           return const MainDashboard();
         }
-        return const SignInScreen(); 
+        return const SignInScreen();
       },
     );
   }

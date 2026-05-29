@@ -16,24 +16,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor DIHAPUS agar otomatis ikut tema
       appBar: AppBar(
-        // backgroundColor DIHAPUS
         elevation: 0,
         title: Container(
           height: 42,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            // Warna background search bar otomatis menyesuaikan warna Card di tema
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
-            // Tambahan border tipis agar lebih bertekstur
-            border: Border.all(color: Colors.grey.withOpacity(0.2)), 
+            border: Border.all(color: Colors.grey.withOpacity(0.2)),
           ),
           child: TextField(
-            // Warna teks yang diketik dinamis
-            style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-            // TRIGGER PENCARIAN SECARA REAL-TIME SAAT DIKETIK
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
             onChanged: (value) {
               setState(() {
                 searchQuery = value.toLowerCase();
@@ -42,34 +38,69 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             decoration: InputDecoration(
               hintText: 'Cari nama jalan macet...',
               hintStyle: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5), // Hint dinamis
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withOpacity(0.5),
               ),
               border: InputBorder.none,
               icon: Icon(
-                Icons.search, 
-                color: Theme.of(context).iconTheme.color?.withOpacity(0.6), // Ikon search dinamis
+                Icons.search,
+                color: Theme.of(context).iconTheme.color?.withOpacity(0.6),
               ),
             ),
           ),
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // Mengambil semua data postingan, urutkan dari yang terbaru
         stream: FirebaseFirestore.instance
             .collection('posts')
             .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          // ==============================================================
+          // KUNCI JAWABAN: JIKA SEARCH BAR KOSONG, TAMPILKAN LAYAR BERSIH
+          // ==============================================================
+          if (searchQuery.trim().isEmpty) {
             return Center(
-              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary), // Loading dinamis
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_rounded,
+                    size: 80,
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.1),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ketik nama jalan untuk mencari laporan.',
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
             );
           }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            );
+          }
+
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
               child: Text(
-                'Belum ada laporan untuk di-discover.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)), // Teks dinamis
+                'Belum ada laporan di database.',
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                ),
               ),
             );
           }
@@ -77,14 +108,26 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           var posts = snapshot.data!.docs;
 
           // LOGIKA FILTER PENCARIAN (Berdasarkan Lokasi atau Caption)
-          if (searchQuery.isNotEmpty) {
-            posts = posts.where((post) {
-              var data = post.data() as Map<String, dynamic>;
-              var location = (data['location'] ?? '').toString().toLowerCase();
-              var caption = (data['caption'] ?? '').toString().toLowerCase();
-              return location.contains(searchQuery) ||
-                  caption.contains(searchQuery);
-            }).toList();
+          posts = posts.where((post) {
+            var data = post.data() as Map<String, dynamic>;
+            var location = (data['location'] ?? '').toString().toLowerCase();
+            var caption = (data['caption'] ?? '').toString().toLowerCase();
+            return location.contains(searchQuery) ||
+                caption.contains(searchQuery);
+          }).toList();
+
+          // Jika setelah dicari ternyata tidak ada jalan/caption yang cocok
+          if (posts.isEmpty) {
+            return Center(
+              child: Text(
+                'Laporan tidak ditemukan.',
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                ),
+              ),
+            );
           }
 
           return GridView.builder(
@@ -93,8 +136,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               crossAxisCount: 2, // 2 Kolom sejajar
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio:
-                  0.75, // Rasio portrait agar gambar lebih proporsional (tidak kaku)
+              childAspectRatio: 0.75, // Rasio portrait
             ),
             itemCount: posts.length,
             itemBuilder: (context, index) {
@@ -104,7 +146,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
               return GestureDetector(
                 onTap: () {
-                  // LEMPAR DATA KE DETAIL SCREEN SAAT DITEKAN
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -131,16 +172,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               fit: BoxFit.cover,
                             )
                           : Container(
-                              color: Colors.grey.withOpacity(0.2), // Background placeholder dinamis transparan
+                              color: Colors.grey.withOpacity(0.2),
                               child: Icon(
-                                Icons.image, 
-                                color: Theme.of(context).iconTheme.color?.withOpacity(0.3) // Ikon dinamis transparan
+                                Icons.image,
+                                color: Theme.of(
+                                  context,
+                                ).iconTheme.color?.withOpacity(0.3),
                               ),
                             ),
 
                       // 2. Layer Atas: Efek Gradient & Teks Lokasi
-                      // Bagian ini TETAP menggunakan warna statis (Black ke Transparent & text White)
-                      // Karena ini overlay di atas gambar, jadi tetap butuh teks putih agar selalu terbaca.
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -162,6 +203,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               const Icon(
                                 Icons.location_on,
                                 size: 14,
+                                color: Colors.white,
                               ),
                               const SizedBox(width: 4),
                               Expanded(
@@ -170,10 +212,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                   ),
-                                  maxLines: 1, // Dibatasi 1 baris agar rapi
-                                  overflow: TextOverflow
-                                      .ellipsis, // Jika kepanjangan jadi titik-titik
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],

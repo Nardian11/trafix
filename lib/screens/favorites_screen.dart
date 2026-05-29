@@ -12,16 +12,13 @@ class FavoritesScreen extends StatelessWidget {
     String? currentUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
-      // backgroundColor DIHAPUS agar otomatis mengikuti Dark/Light Mode
       appBar: AppBar(
-        // backgroundColor DIHAPUS
         elevation: 0,
         title: Text(
-          'Jalan Pantauan Saya',
+          'Postingan Favorit',
           style: TextStyle(
-            // color: Colors.black DIHAPUS, ganti jadi dinamis
-            color: Theme.of(context).textTheme.bodyLarge?.color, 
-            fontWeight: FontWeight.bold
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
@@ -34,69 +31,42 @@ class FavoritesScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary), // Warna dinamis
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
               child: Text(
-                'Belum ada jalan pantauan favorit.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)), // Dinamis
+                'Belum ada postingan favorit.',
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                ),
               ),
             );
           }
 
           var allPosts = snapshot.data!.docs;
 
-          // STEP 1: Cari semua postingan yang pernah di-like oleh user ini
-          var likedPosts = allPosts.where((doc) {
+          // LOGIKA FILTER: MURNI HANYA POSTINGAN YANG DI-LIKE OLEH USER
+          var favoriteFeed = allPosts.where((doc) {
             var data = doc.data() as Map<String, dynamic>;
             List<dynamic> likedVoters = data['likedVoters'] ?? [];
             return likedVoters.contains(currentUid);
           }).toList();
 
-          // STEP 2: Ekstrak kata kunci unik nama jalan dari postingan yang di-like
-          Set<String> favoriteStreetKeywords = {};
-          for (var doc in likedPosts) {
-            var data = doc.data() as Map<String, dynamic>;
-            String location = (data['location'] ?? '').toString().toLowerCase();
-
-            // Memecah kalimat lokasi menjadi potongan kata (menghilangkan spasi dan komma)
-            List<String> words = location.split(RegExp(r'[\s,.]+'));
-            for (var word in words) {
-              // Abaikan kata umum seperti "jalan", "jl", atau angka/kata pendek agar akurat
-              if (word.length > 3 &&
-                  word != 'jalan' &&
-                  word != 'gang' &&
-                  word != 'raya') {
-                favoriteStreetKeywords.add(word);
-              }
-            }
-          }
-
-          // STEP 3: Filter timeline untuk menampilkan postingan serupa (unsur jalan sama)
-          var favoriteFeed = allPosts.where((doc) {
-            var data = doc.data() as Map<String, dynamic>;
-            String location = (data['location'] ?? '').toString().toLowerCase();
-            List<dynamic> likedVoters = data['likedVoters'] ?? [];
-
-            // Jika postingan ini memang di-like user, otomatis tampilkan
-            if (likedVoters.contains(currentUid)) return true;
-
-            // Jika lokasi postingan mengandung salah satu kata kunci jalan favorit user
-            for (var keyword in favoriteStreetKeywords) {
-              if (location.contains(keyword)) {
-                return true;
-              }
-            }
-            return false;
-          }).toList();
-
           if (favoriteFeed.isEmpty) {
             return Center(
               child: Text(
-                'Tidak ada laporan macet terbaru di jalan favoritmu.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)), // Dinamis
+                'Kamu belum menyukai laporan apapun.',
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                ),
               ),
             );
           }
@@ -108,74 +78,130 @@ class FavoritesScreen extends StatelessWidget {
               var postData = favoriteFeed[index].data() as Map<String, dynamic>;
               String imgBase64 = postData['image'] ?? '';
               String postId = favoriteFeed[index].id;
+              String postUid = postData['uid'] ?? '';
               List<dynamic> likedVoters = postData['likedVoters'] ?? [];
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                elevation: 2,
-                // Card Color akan otomatis mengikuti theme.cardColor dari main.dart
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.primary, // Dinamis
-                        child: const Icon(
-                          Icons.add_road,
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        postData['location'] ?? 'Nama Jalan',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        "Info: ${postData['caption']}",
-                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8)), // Dinamis
-                      ),
-                      trailing: Icon(
-                        likedVoters.contains(currentUid)
-                            ? Icons.favorite
-                            : Icons.star,
-                        color: likedVoters.contains(currentUid)
-                            ? Colors.red
-                            : Colors.amber,
-                      ),
+              return StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(postUid)
+                    .snapshots(),
+                builder: (context, userSnapshot) {
+                  String authorName = postData['name'] ?? 'Anonim';
+                  String authorProfilePic = '';
+
+                  if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                    var authorData =
+                        userSnapshot.data!.data() as Map<String, dynamic>;
+                    authorName = authorData['username'] ?? authorName;
+                    authorProfilePic = authorData['profilePic'] ?? '';
+                  }
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    if (imgBase64.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DetailPostScreen(
-                                postId: postId,
-                                name: postData['name'] ?? 'Anonim',
-                                username: postData['username'] ?? 'anonim',
-                                location: postData['location'] ?? 'Lokasi...',
-                                caption: postData['caption'] ?? '',
-                                imageBase64: imgBase64,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.grey.withOpacity(0.3),
+                            backgroundImage: authorProfilePic.isNotEmpty
+                                ? MemoryImage(base64Decode(authorProfilePic))
+                                      as ImageProvider
+                                : const NetworkImage(
+                                    'https://i.pravatar.cc/150?img=11',
+                                  ),
+                          ),
+                          title: Text(
+                            postData['location'] ?? 'Nama Jalan',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            "$authorName: ${postData['caption']}",
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                            ),
+                          ),
+
+                          // ==========================================================
+                          // KUNCI JAWABAN: TOMBOL UNFAVORITE INTERAKTIF
+                          // ==========================================================
+                          trailing: IconButton(
+                            icon: Icon(
+                              likedVoters.contains(currentUid)
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: likedVoters.contains(currentUid)
+                                  ? Colors.red
+                                  : Theme.of(context).iconTheme.color,
+                            ),
+                            onPressed: () async {
+                              if (currentUid == null) return;
+
+                              // Logika Toggle: Jika sudah dilike, maka cabut (Unlike)
+                              if (likedVoters.contains(currentUid)) {
+                                await FirebaseFirestore.instance
+                                    .collection('posts')
+                                    .doc(postId)
+                                    .update({
+                                      'likedVoters': FieldValue.arrayRemove([
+                                        currentUid,
+                                      ]),
+                                    });
+                              } else {
+                                // Jaga-jaga jika ingin melike kembali dari layar ini (meski jarang terjadi karena hilang dari list)
+                                await FirebaseFirestore.instance
+                                    .collection('posts')
+                                    .doc(postId)
+                                    .update({
+                                      'likedVoters': FieldValue.arrayUnion([
+                                        currentUid,
+                                      ]),
+                                    });
+                              }
+                            },
+                          ),
+                        ),
+                        if (imgBase64.isNotEmpty)
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailPostScreen(
+                                    postId: postId,
+                                    name: authorName,
+                                    username: authorName,
+                                    location:
+                                        postData['location'] ?? 'Lokasi...',
+                                    caption: postData['caption'] ?? '',
+                                    imageBase64: imgBase64,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                bottom: Radius.circular(16),
+                              ),
+                              child: Image.memory(
+                                base64Decode(imgBase64),
+                                height: 160,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          );
-                        },
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            bottom: Radius.circular(16),
                           ),
-                          child: Image.memory(
-                            base64Decode(imgBase64),
-                            height: 160,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           );

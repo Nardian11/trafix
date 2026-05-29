@@ -11,16 +11,15 @@ class NotificationService {
     // 1. Meminta izin memunculkan notifikasi di HP
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
-    // 2. Setup ikon notifikasi bawaan Android
+    // 2. Setup ikon notifikasi bawaan Android (KUNCI PERBAIKAN: Gunakan @mipmap/ic_launcher)
     final initializationSettingsAndroid = const AndroidInitializationSettings(
-      'app_icon',
+      '@mipmap/ic_launcher',
     );
 
     final initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
     );
 
-    // TETAP DIpertahankan sesuai aslimu
     await _localNotificationsPlugin.initialize(
       settings: initializationSettings,
     );
@@ -31,18 +30,17 @@ class NotificationService {
       AndroidNotification? android = message.notification?.android;
 
       if (notification != null && android != null) {
-        // TETAP DIpertahankan sesuai aslimu
         _localNotificationsPlugin.show(
           id: notification.hashCode,
           title: notification.title,
           body: notification.body,
-          notificationDetails: NotificationDetails(
+          notificationDetails: const NotificationDetails(
             android: AndroidNotificationDetails(
               'high_importance_channel',
               'High Importance Notifications',
               importance: Importance.max,
               priority: Priority.high,
-              icon: 'app_icon',
+              icon: '@mipmap/ic_launcher', // <--- KUNCI PERBAIKAN
             ),
           ),
         );
@@ -60,12 +58,11 @@ class NotificationService {
       channelDescription: 'Notifikasi pop-up kemacetan manual',
       importance: Importance.max,
       priority: Priority.high,
-      icon: 'ic_launcher',
+      icon: '@mipmap/ic_launcher', // <--- KUNCI PERBAIKAN
     );
 
     const notificationDetails = NotificationDetails(android: androidDetails);
 
-    // Fungsi pop-up ini juga disesuaikan menggunakan parameter id:, title:, dll
     await _localNotificationsPlugin.show(
       id: 0,
       title: 'Hi Hasan!',

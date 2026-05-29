@@ -81,7 +81,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary, // Warna dinamis dari tema
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.arrow_back_ios_new, size: 16),

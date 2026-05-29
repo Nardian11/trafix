@@ -19,8 +19,8 @@ class _AddPostScreenState extends State<AddPostScreen> {
     final XFile? photo = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality:
-          20, // KUNCI UTAMA: Kompres ekstrem agar aman di Firestore (< 1MB)
-      maxWidth: 600, // KUNCI UTAMA: Batasi resolusi lebar gambar
+          60, // KUNCI UTAMA: Kompres ekstrem agar aman di Firestore (< 1MB)
+      maxWidth: 1080, // KUNCI UTAMA: Batasi resolusi lebar gambar
     );
 
     if (photo != null) {
@@ -46,12 +46,12 @@ class _AddPostScreenState extends State<AddPostScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close), 
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'New Report',
-          style: TextStyle(fontWeight: FontWeight.bold), 
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -66,20 +66,19 @@ class _AddPostScreenState extends State<AddPostScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _openCamera, 
+              onPressed: _openCamera,
               // HAPUS Colors.white dari Icon agar bisa diatur oleh foregroundColor
-              icon: const Icon(Icons.camera), 
+              icon: const Icon(Icons.camera),
               label: const Text(
                 'Buka Kamera',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary, // Background dinamis
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary, // Background dinamis
                 // KUNCI JAWABAN: Set foregroundColor agar Teks & Icon otomatis kontras!
-                foregroundColor: Theme.of(context).colorScheme.onPrimary, 
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
                   vertical: 16,
