@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:convert'; // Untuk mengubah gambar jadi teks Base64
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -107,36 +107,57 @@ class _ConfirmPostScreenState extends State<ConfirmPostScreen> {
           .get();
       String username = userDoc['username'] ?? 'User';
 
-      // ==========================================================
-      // LOGIKA BARU: UBAH GAMBAR JADI TEKS (BASE64)
-      // ==========================================================
       final bytes = await widget.imageFile.readAsBytes();
       final String base64Image = base64Encode(bytes);
 
-      // Simpan langsung ke Firestore sebagai teks (Sesuai slide materi)
+      // ==========================================================
+      // SIMPAN KE FIRESTORE (DENGAN STRUKTUR ARRAY BARU)
+      // ==========================================================
       await FirebaseFirestore.instance.collection('posts').add({
         'uid': currentUser.uid,
         'name': username,
         'username': username,
         'location': _locationController.text.trim(),
         'caption': _captionController.text.trim(),
-        'image': base64Image, // Menyimpan format teks Base64
-        'likesCount': 0,
+        'image': base64Image,
+        'likesCount': 0, // Dipertahankan untuk kompabilitas UI lama jika ada
+        'likedVoters': [], // Array baru untuk 1 User 1 Like
+        'correctVoters': [], // Array baru untuk Centang
+        'incorrectVoters': [], // Array baru untuk Silang
+        'commentsCount': 0, // Hitungan awal komentar
         'timestamp': FieldValue.serverTimestamp(),
       });
 
       // ==========================================================
-      // TEMBAK API VERCEL (NOTIFIKASI)
+      // TEMBAK API VERCEL (SMART NOTIFICATION BERDASARKAN JALAN)
       // ==========================================================
       try {
         final url = Uri.parse(
           'https://project-uas-pab2-trafix.vercel.app/send-to-topic',
         );
 
+        // Membedah nama jalan untuk dijadikan Target Topic Vercel
+        String rawLocation = _locationController.text.trim().toLowerCase();
+        List<String> locationWords = rawLocation.split(RegExp(r'[\s,.]+'));
+
+        String targetedTopic = "kemacetan"; // Default topic
+        for (var word in locationWords) {
+          // Cari kata unik (mengabaikan kata 'jalan', 'raya', dll)
+          if (word.length > 3 &&
+              word != 'jalan' &&
+              word != 'gang' &&
+              word != 'raya' &&
+              word != 'jln') {
+            targetedTopic =
+                word; // Contoh: akan menjadi "sudirman" atau "demang"
+            break;
+          }
+        }
+
         final body = jsonEncode({
           "topic": "kemacetan",
-          "title": "🚨 Laporan Baru dari $username",
-          "body": "Titik: ${_locationController.text.trim()}",
+          "title": "🚨 Macet Baru di Jalan Pantauanmu!",
+          "body": "Info dari $username di ${_locationController.text.trim()}",
           "senderName": username,
         });
 
